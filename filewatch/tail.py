@@ -1,8 +1,8 @@
-import buftok
+from . import buftok
 import logging
 import os
 import time
-import watch
+from . import watch
 
 
 class NoSinceDBPathGiven(Exception):
@@ -104,11 +104,11 @@ class Tail(object):
         self.logger.debug("_open_file: %s: opening", path)
         try:
             self.files[path] = open(path, 'r')
-        except Exception, e:
+        except Exception as e:
             # don't emit this message too often. if a file that we can't
             # read is changing a lot, we'll try to open it more often,
             # and might be spammy.
-            now = long(time.time())
+            now = int(time.time())
             if now - self.lastwarn.get(path) > Tail.OPEN_WARN_INTERVAL:
                 self.logger.warn("failed to open %s: %s", path, e)
                 self.lastwarn[path] = now
@@ -171,7 +171,7 @@ class Tail(object):
             self.sincedb[self.statcache[path]] = self.files[path].tell()
 
         if changed:
-            now = long(time.time())
+            now = int(time.time())
             delta = now - self.sincedb_last_write
             if delta >= self.opts['sincedb_write_interval']:
                 self.logger.debug(
@@ -190,11 +190,11 @@ class Tail(object):
             with open(path, 'r') as db:
                 for line in db:
                     ino, dev, pos = line.strip().split(' ', 2)
-                    inode = (ino, long(dev))
+                    inode = (ino, int(dev))
                     self.logger.debug("_sincedb_open: setting %s to %s", inode,
-                                      long(pos))
-                    self.sincedb[inode] = long(pos)
-        except Exception, e:
+                                      int(pos))
+                    self.sincedb[inode] = int(pos)
+        except Exception as e:
             self.logger.debug("_sincedb_open: %s: %s", path, e)
             return
 
@@ -203,14 +203,14 @@ class Tail(object):
         tmp = '%s.new' % path
         try:
             with open(tmp, 'w') as db:
-                for inode, pos in self.sincedb.items():
+                for inode, pos in list(self.sincedb.items()):
                     db.write('%s %s %s\n' % (inode[0], inode[1], pos))
-        except Exception, e:
+        except Exception as e:
             self.logger.warn("_sincedb_write failed: %s: %s", tmp, e)
             return
         try:
             os.rename(tmp, path)
-        except Exception, e:
+        except Exception as e:
             self.logger.warn(
                 "_sincedb_write rename/sync failed: %s -> %s: %s",
                 tmp, path, e)

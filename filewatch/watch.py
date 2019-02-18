@@ -43,7 +43,7 @@ class Watch(object):
 
     def exclude(self, path):
         '''exclude either a path or list of paths'''
-        if isinstance(path, basestring):
+        if isinstance(path, str):
             self._exclude.add(path)
         else:
             for p in path:
@@ -56,7 +56,7 @@ class Watch(object):
         return True
 
     def each(self, func):
-        for path, info in self._files.items():
+        for path, info in list(self._files.items()):
             if not info.create_sent:
                 if info.initial:
                     func(Watch.create_initial, path)
@@ -64,10 +64,10 @@ class Watch(object):
                     func(Watch.create, path)
                 info.create_sent = True
 
-        for path, info in self._files.items():
+        for path, info in list(self._files.items()):
             try:
                 stat = os.stat(path)
-            except OSError, e:
+            except OSError as e:
                 if e.errno == os.errno.ENOENT:
                     del self._files[path]
                     self.logger.debug(
